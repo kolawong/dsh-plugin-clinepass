@@ -1,0 +1,63 @@
+{
+  "name": "dsh-plugin-clinepass",
+  "version": "1.0.0",
+  "description": "DeepSeek Harness bundle: ClinePass model provider (docs.cline.bot/getting-started/clinepass) — seeds the llm-pi-ai `clinepass` route (endpoint, OpenAI Chat Completions protocol, the 12 subscription models, credential reference) so the Models settings page needs only the API key.",
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./route.js": "./lib/route.js",
+    "./package.json": "./package.json"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "keywords": [
+    "dsh-plugin",
+    "deepseek-harness",
+    "cordis",
+    "cline",
+    "clinepass",
+    "model-provider",
+    "llm-pi-ai"
+  ],
+  "author": "kola",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kolawong/dsh-plugin-clinepass.git"
+  },
+  "bugs": {
+    "url": "https://github.com/kolawong/dsh-plugin-clinepass/issues"
+  },
+  "homepage": "https://github.com/kolawong/dsh-plugin-clinepass#readme",
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "lib/index.js",
+    "lib/route.js",
+    "index.d.ts",
+    "cordis.patch.yml",
+    "README.md",
+    "README_CN.md",
+    "LICENSE",
+    "icon.svg",
+    "tests/route.test.js"
+  ],
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "build": "node -c lib/index.js && node -c lib/route.js"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": ">=4.0.0",
+    "@deepseek-ai/schemastery": ">=3.18.5"
+  },
+  "icon": "./icon.svg"
+}

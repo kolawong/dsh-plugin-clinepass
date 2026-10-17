@@ -1,0 +1,38 @@
+# dsh-plugin-clinepass bundle patch: inserts the ClinePass provider row.
+# Applied as a bundle layer of the profile; rows here are fresh inserts.
+#
+# The entry owns no service of its own: at activation it seeds one llm-pi-ai
+# provider route (see index.js) so the Models settings page shows a ClinePass
+# card whose only remaining field is the API key.
+- insert:
+    - id: clinepass
+      name: 'dsh-plugin-clinepass'
+      inject:
+        - settings
+      config:
+        # Seed the llm-pi-ai route on activation when no route of this key
+        # exists yet. An already-configured route is never touched.
+        seed: true
+        # llm-pi-ai provider route key (settings key of the Models page card).
+        routeKey: 'clinepass'
+        # Seeding refuses a routeKey that already names a provider in the llm
+        # runtime's directory (installed catalog or another plugin's route):
+        # writing it would shadow that route's baseURL/api/apiKeyEnv, or
+        # collide in llm-pi-ai's directory commit. The refusal warns once per
+        # seed run (a config edit re-runs it). Set true only to take the key
+        # over deliberately.
+        allowReservedRouteKey: false
+        # Name shown in selectors and on the settings card.
+        displayName: 'ClinePass'
+        # Credential reference the route resolves its API key through. Same
+        # name the Models page would derive for the route key; change it here
+        # to reuse an existing reference (e.g. CLINE_API_KEY) instead.
+        apiKeyEnv: 'CLINEPASS_API_KEY'
+        # Cline API endpoint (docs.cline.bot/getting-started/clinepass).
+        baseURL: 'https://api.cline.bot/api/v1'
+        # Wire protocol; the Cline API speaks OpenAI Chat Completions.
+        api: 'openai-completions'
+        # The model catalog deliberately stays OUT of this patch: the schema
+        # default (DEFAULT_MODELS in lib/route.js) supplies it, so a plugin
+        # upgrade carries new slugs and refreshed specs without a patch edit.
+        # Pin your own list here (or in 设置 → 插件) only to override it.
