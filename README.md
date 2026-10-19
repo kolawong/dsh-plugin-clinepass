@@ -14,10 +14,10 @@ Everything runs through DSH's native paths:
 
 - a **ClinePass** card on **Settings → Models** whose only primary field is the **API key**
   (the collapsed 自定义设置 area still edits endpoint, protocol, and the model list);
-- the 12 ClinePass subscription models (`cline-pass/glm-5.3`, `cline-pass/kimi-k3`,
-  `cline-pass/deepseek-v4-pro`, …) in the model picker;
-- **fetch available models** on the card answers with the subscription catalog instead of the
-  endpoint's usage-billing listing (see below).
+- the current ClinePass subscription models (`cline-pass/glm-5.3`, `cline-pass/kimi-k3`,
+  `cline-pass/deepseek-v4-pro`, …) in the model picker — **fetched live**, never hardcoded;
+- **fetch available models** on the card answers with what the subscription sources publish right
+  now instead of the endpoint's usage-billing listing (see below).
 
 > **Why isn't ClinePass in the "add provider" dropdown?** That select lists only *unconfigured*
 > directory providers (an adoption entry). The plugin pre-seeds ClinePass as a configured provider
@@ -47,7 +47,7 @@ remains is:
 
 | Does | Does not |
 | --- | --- |
-| idempotently seed the `clinepass` route (endpoint, protocol, display name, credential ref, models) | touch dsh source or any other route |
+| idempotently seed the `clinepass` route (endpoint, protocol, display name, credential ref, live-fetched models) | touch dsh source or any other route |
 | scope "fetch available models" to `cline-pass/*` slugs | own key storage (native credentials service does) |
 | then hand everything to the native Models page / credentials / streaming adapter | overwrite configuration you already have |
 
@@ -70,11 +70,11 @@ only). A removal takes effect and is respected for the rest of the session; the 
 (restart or hot reload) finds the route missing and re-seeds it. To retire the card for good, set
 `seed: false` instead of deleting it.
 
-## Seeded model list
+## Probed spec table (corrections, not a catalog)
 
-The 12 subscription models from the [ClinePass docs](https://docs.cline.bot/getting-started/clinepass).
-`input` (text/image) is probed fact — one image and one text request per model against the live API
-on 2026-09-29:
+The model list itself is always fetched live (see the next section). What the plugin ships is a
+**probed-facts table** that only *corrects* fetched rows for ids it knows: `input` (text/image) is
+probed fact — one image and one text request per model against the live API on 2026-09-29:
 
 | Model | id | context | max output | image |
 | --- | --- | --- | --- | --- |
@@ -103,8 +103,9 @@ which declares GLM-5.3 and DeepSeek V4 Pro text-only although Cline's deployment
 (262144/32768): under-reporting only compacts earlier and can never overflow the context.
 
 **Spec auto-fill**: on every activation the plugin fills only *absent* spec fields on the existing
-route — values anyone set and models anyone added or removed are never touched. Upgrading the
-plugin needs no action: the next activation fills whatever new specs the release ships.
+route — values anyone set and models anyone added or removed are never touched. The fill source is
+this probed table (or your pinned `models` list), never a registry claim. Upgrading the plugin
+needs no action: the next activation fills whatever new specs the release ships.
 
 ## Why "fetch available models" is wrapped
 
@@ -112,30 +113,31 @@ Cline's `GET /api/v1/models` enumerates the **usage-billing catalog** (vendor sl
 `zai/glm-5.3`, 464 entries, re-verified 2026-10-06 to contain no `cline-pass/*` ids). Subscription
 models use the `cline-pass/*` alias namespace (verified: `cline-pass/glm-5.3` routes to
 `zai/glm-5.3` underneath). Passing the listing through would let users adopt slugs that do not count
-against the subscription, so the card's discovery answer is scoped to `cline-pass/*`: the shipped
-list first, plus any `cline-pass/*` id the endpoint publishes later.
+against the subscription, so the card's discovery answer is scoped to `cline-pass/*` ids.
+
+**The model list is fetched, never shipped.** The source of truth is the **plan catalog from the
+[models.dev](https://models.dev/providers/cline-pass/) `cline-pass` provider** — 18 models as of
+2026-10-06, including `mimo-v2.6-pro`, `mimo-v2.6-flash`, `kimi-k2.6`, `kimi-k2.7-code`, `glm-5.2`
+and `deepseek-v4-flash` — merged with any `cline-pass/*` id the endpoint probe returns. The same
+fetch populates the route's model list at seed time. A model Cline adds needs no plugin release:
+it shows up on the next "fetch available models" (six-hour cache). There is deliberately **no
+bundled fallback list**: if every source is unreachable the answer is empty (with a warn log)
+rather than a stale catalog claiming models the plan may no longer carry — the one exception is an
+operator-pinned `models` list, which is explicit intent and always leads the answer.
+
+**Probed facts still win over catalog claims.** Where the probed table knows an id, its per-model
+image-support result *replaces* the registry's declaration (models.dev claims image input for
+`qwen3.7-max`; the live route rejects it), while absent context/output limits are only *filled*.
+New ids the table doesn't know pass through with the registry's own declaration.
 
 **The probe is still made even though it contributes no `cline-pass/*` id**: it is the route's live
-credential check, and a chance to catch slugs published after a release.
+credential check.
 
 **A rejected key is not masked**: a key that was *supplied* and rejected — a malformed/blank stored
 value (`INVALID_CREDENTIAL`), or an endpoint that answered 401/403 (`DISCOVERY_FAILED` with the
-harness's "; check the API key" hint) — now **surfaces the harness's own error** on the card instead
-of being answered from the shipped catalog. The old fallback turned a wrong API key into what looked
-like success. Two states still answer from the shipped catalog, by design: an **unconfigured** card
-(`MISSING_CREDENTIAL` — the empty key field is already visible, and the shipped list is the
-documented answer there) and an **unreachable or unparseable** endpoint (network failures, non-JSON
-bodies, statuses other than 401/403).
-
-**Where new models come from**: since that endpoint will never carry a `cline-pass/*` id, the
-"shipped list plus endpoint" pair could never grow. The plugin therefore reads the **plan catalog
-from the [models.dev](https://models.dev/providers/cline-pass/) `cline-pass` provider** — 18 models
-as of 2026-10-06, covering all 12 shipped ones plus `mimo-v2.6-pro`, `mimo-v2.6-flash`, `kimi-k2.6`,
-`kimi-k2.7-code`, `glm-5.2` and `deepseek-v4-flash`. It is fetched when you click "fetch available
-models" (six-hour cache; a failure just falls back to the shipped list) and its new `cline-pass/*`
-rows appear in the adoption list for you to confirm. That source is the subscription namespace only,
-so it cannot widen the route past the plan, and the shipped rows keep priority — the per-model
-probed image/context facts are never overwritten by a catalog claim.
+harness's "; check the API key" hint) — **surfaces the harness's own error** on the card instead of
+being answered with a model list. Every other failure (an unconfigured card, an unreachable or
+unparseable endpoint, a registry outage) simply narrows the answer to the sources that did respond.
 
 ## Configuration
 
@@ -151,7 +153,7 @@ editable in the plugins settings page:
 | `apiKeyEnv` | `CLINEPASS_API_KEY` | credential reference; set to `CLINE_API_KEY` to reuse an existing Cline credential with zero typing |
 | `baseURL` | `https://api.cline.bot/api/v1` | Cline API endpoint |
 | `api` | `openai-completions` | wire protocol |
-| `models` | the 12 models above | seeded model catalog |
+| `models` | *(empty — fetch live)* | operator-pinned model list; empty means the seed fetches the models.dev `cline-pass` namespace and discovery answers from live sources only |
 
 ## Requirements
 

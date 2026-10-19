@@ -24,6 +24,11 @@ export interface ClinePassConfig {
   apiKeyEnv: string
   baseURL: string
   api: string
+  /**
+   * Operator-pinned model list. Empty (the default) means fetch-first: the
+   * seed pulls the models.dev registry's `cline-pass` namespace at
+   * activation and discovery answers from live sources only.
+   */
   models: ClinePassModel[]
 }
 
@@ -45,31 +50,49 @@ export interface ClinePassDiscoveredModel {
   inputModalities?: Array<'text' | 'image'>
 }
 
-export declare const DEFAULT_MODELS: ClinePassModel[]
+/**
+ * Per-model probed facts (input modalities, curated capacities) used to
+ * CORRECT fetched rows for known ids. Not a model catalog: it never
+ * contributes an id to the route or the discovery answer.
+ */
+export declare const PROBED_MODEL_SPECS: ClinePassModel[]
 export declare function buildRouteProfile(config: ClinePassConfig): ClinePassRouteProfile
 /**
  * The upgrade fill for a route the plugin already seeded: every absent
- * `contextWindow`/`maxTokens`/`input` on a model the shipped catalog knows,
+ * `contextWindow`/`maxTokens`/`input` on a model the reference specs know,
  * and nothing else. A field the user set is never overwritten, and a model
  * the user added or removed is never touched.
  */
 export declare function mergeSpecFill(
   existing: readonly ClinePassModel[] | null | undefined,
-  shipped: readonly ClinePassModel[] | null | undefined,
+  reference: readonly ClinePassModel[] | null | undefined,
 ): ClinePassModel[] | null
 /**
- * The catalog the plugin should actually use: the configured models with
- * every absent spec field filled from the code-level {@link DEFAULT_MODELS}.
- * Configured values always win; the code catalog only patches gaps on
- * matching ids.
+ * An operator-pinned model list with every absent spec field filled from the
+ * code-level {@link PROBED_MODEL_SPECS}. Configured values always win; the
+ * probed facts only patch gaps on matching ids. An empty/unset list stays
+ * empty: that is the signal to fetch the model list live instead.
  */
 export declare function effectiveCatalog(
   config: ClinePassConfig | null | undefined,
 ): ClinePassModel[]
-export declare function shippedDiscoveryModels(
-  config: ClinePassConfig,
+/**
+ * The discovery answer: the fetched rows (`cline-pass/*` ids only, first
+ * occurrence wins), corrected by the probed-facts table where it knows an
+ * id — probed input modalities replace a catalog claim, absent capacities
+ * are only filled. No shipped fallback: empty sources yield an empty answer.
+ */
+export declare function fetchedDiscoveryModels(
   live?: readonly ClinePassDiscoveredModel[],
+  known?: readonly ClinePassModel[],
 ): ClinePassDiscoveredModel[]
+/**
+ * Fetched discovery rows in the shape a seeded route's model list speaks
+ * (`inputModalities` narrowed back to the route schema's `input`).
+ */
+export declare function routeModelsFromDiscovery(
+  rows: readonly ClinePassDiscoveredModel[],
+): ClinePassModel[]
 /** Registry provider whose catalog is the ClinePass subscription namespace. */
 export declare const REGISTRY_PROVIDER: string
 /** models.dev listing: every provider's catalog in one payload. */
@@ -96,6 +119,8 @@ export declare function reservedRouteKey(routeKey: unknown, directory: unknown):
  * other failure are deliberately not.
  */
 export declare function credentialFailure(error: unknown): boolean
+/** Drop the cached plan catalog, forcing the next discovery to re-fetch. */
+export declare function clearRegistryCache(): void
 
 /** Seed tuning; every field has a code default. */
 export interface ClinePassSeedOptions {

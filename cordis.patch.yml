@@ -32,7 +32,8 @@
         baseURL: 'https://api.cline.bot/api/v1'
         # Wire protocol; the Cline API speaks OpenAI Chat Completions.
         api: 'openai-completions'
-        # The model catalog deliberately stays OUT of this patch: the schema
-        # default (DEFAULT_MODELS in lib/route.js) supplies it, so a plugin
-        # upgrade carries new slugs and refreshed specs without a patch edit.
-        # Pin your own list here (or in 设置 → 插件) only to override it.
+        # The model list deliberately stays OUT of this patch: with no pinned
+        # `models` the seed fetches the models.dev `cline-pass` namespace at
+        # activation (and "fetch available models" always answers live), so a
+        # model Cline adds needs no plugin release. Pin your own list here
+        # (or in 设置 → 插件) only to override the fetch.
