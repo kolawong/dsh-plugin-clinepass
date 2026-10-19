@@ -29,7 +29,7 @@ Everything runs through DSH's native paths:
 ```bash
 # Option A: hot-assemble with the dev injector (no restart; also records the
 # bundle in the profile's bundle list)
-#   dev_install_package /root/dsh-plugin-clinepass --profile web
+#   dev_install_package /path/to/dsh-plugin-clinepass --profile web
 
 # Option B: manual
 #   1) add this directory to the profile dependencies (link or file) and to

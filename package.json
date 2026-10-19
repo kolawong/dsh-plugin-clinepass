@@ -1,6 +1,6 @@
 {
   "name": "dsh-plugin-clinepass",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "DeepSeek Harness bundle: ClinePass model provider (docs.cline.bot/getting-started/clinepass) — seeds the llm-pi-ai `clinepass` route (endpoint, OpenAI Chat Completions protocol, the 12 subscription models, credential reference) so the Models settings page needs only the API key.",
   "type": "module",
   "main": "lib/index.js",

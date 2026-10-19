@@ -24,7 +24,7 @@ ClinePass 是 Cline 的订阅档（$9.99/月，热门开源编码模型 2–5 �
 
 ```bash
 # 方式一：开发注入器热装配（免重启，同时写入 profile 的 bundles 列表）
-#   dev_install_package /root/dsh-plugin-clinepass --profile web
+#   dev_install_package /path/to/dsh-plugin-clinepass --profile web
 
 # 方式二：手工装配
 #   1) 把本目录放进 profile 的 dependencies（link 或 file 均可），并加入
